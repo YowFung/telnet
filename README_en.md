@@ -4,25 +4,25 @@
 
 # Telnet
 
-使用 Dart 语言实现的 Telnet 客户端。
+Telnet client implemented in dart language.
 
 
 
-## 功能特点
+## Features
 
-- 支持选项协商、子选项协商和文本消息传输
-- 支持 TLS 安全传输
-- 消息事件侦听
-- 枚举了所有的 Telnet 命令码和选项码
+- Negotiation.
+- TLS support.
+- Event listening.
+- Enumerate all Telnet commands and options.
 
 
 
-## 使用方法
+## Usage
 
-创建一个 Telnet 连接任务：
+Create a Telnet connection task.
 
 ```dart
-// 常规方式
+// Ordinary
 final task = TelnetClient.startConnect(
   host: host, 
   port: port, 
@@ -32,7 +32,7 @@ final task = TelnetClient.startConnect(
   onEvent: onEvent,
 );
 
-// 使用 TLS 安全传输
+// Secure
 final task = TelnetClient.startSecureConnect(
 	host: host,
   port: port,
@@ -46,33 +46,33 @@ final task = TelnetClient.startSecureConnect(
 );
 ```
 
-等待连接任务结束，然后获取 `TelnetClient` 实例对象：
+Wait the connection task completed and get the `TelnetClient` instance.
 
 ```dart
-// 同步方式
+// Sync
 await task.waitDone();
 final client = task.client;
 final connected = client != null;
 
-// 异步方式
+// Async
 task.onDone = (client) {
   final connected = client != null;
 }
 ```
 
-取消连接任务：
+Cancel the connection task.
 
 ```dart
 task.cancel();
 ```
 
-关闭 Telnet 连接：
+Close the TelnetClient.
 
 ```dart
 client.terminate();
 ```
 
-侦听并处理消息事件：
+Listen and handle events.
 
 ```dart
 final task = TelnetClient.startConnect(
@@ -83,19 +83,19 @@ final task = TelnetClient.startConnect(
     final eventMsg = event.msg;
     
     if (eventType == TLMsgEventType.write) {
-      print("这是一个写事件，数据由客户端发往服务端。");
+      print("This is write event. Data flows from the client to the server.");
     } else if (eventType == TLMsgEventType.read) {
-      print("这是一个读事件，数据由服务端发往客户端。");
+      print("This is write event. Data flows from the server to the client.");
     }
     
     if (eventMsg is TLOptMsg) {
-      // 选项协商
+      // Negotiation.
       print("IAC ${eventMsg.cmd.code} ${eventMsg.opt.code}");
     } else if (eventMsg is TLSubMsg) {
-      // 子选项协商
+      // Subnegotiation.
       print("IAC SB ${eventMsg.opt.code} ${eventMsg.arg.join(' ')} IAC SE");
     } else if (eventMsg is TLTextMsg) {
-      // 文本消息
+      // String message.
       print(eventMsg.text);
     }
   },

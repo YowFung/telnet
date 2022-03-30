@@ -1,7 +1,8 @@
 name: telnet
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
+description: Telnet client implemented in dart language.
+version: 1.0.1
 homepage: https://github.com/YowFung/telnet
+verified_publishers: yowfung
 
 environment:
   sdk: '>=2.14.0 <3.0.0'

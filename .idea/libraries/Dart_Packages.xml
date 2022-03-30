@@ -261,6 +261,13 @@
             </list>
           </value>
         </entry>
+        <entry key="telnet">
+          <value>
+            <list>
+              <option value="$PROJECT_DIR$/../lib" />
+            </list>
+          </value>
+        </entry>
         <entry key="term_glyph">
           <value>
             <list>
@@ -381,6 +388,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.flutter-io.cn/web_socket_channel-2.1.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.flutter-io.cn/webkit_inspection_protocol-1.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.flutter-io.cn/yaml-3.1.0/lib" />
+      <root url="file://$PROJECT_DIR$/../lib" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

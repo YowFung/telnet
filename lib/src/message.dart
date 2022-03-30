@@ -1,7 +1,7 @@
 part of "package:telnet/telnet.dart";
 
 
-/// Telnet Message.
+/// Telnet 消息基类。
 abstract class TLMsg {
 
   const TLMsg(this.bytes);
@@ -37,11 +37,13 @@ abstract class TLMsg {
 }
 
 
-/// Telnet Text Message.
+/// Telnet 文本消息类。
 class TLTextMsg extends TLMsg {
 
+  /// 通过字符串文本来创建一个 Telnet 消息实例。
   TLTextMsg(this.text) : super(text.codeUnits);
 
+  /// 通过字节序列来创建一个 Telnet 消息实例。
   TLTextMsg.fromBytes(List<int> bytes) : super(bytes) {
     text = utf8.decode(this.bytes, allowMalformed: true);
   }
@@ -72,11 +74,13 @@ class TLTextMsg extends TLMsg {
 }
 
 
-/// Telnet Option Message.
+/// Telnet 选项消息类。
 class TLOptMsg extends TLMsg {
 
+  /// 通过命令码和选项码来创建一个 Telnet 消息实例。
   TLOptMsg(this.cmd, this.opt) : super([TLCmd.iac.code, cmd.code, opt.code]);
 
+  /// 通过字节序列来创建一个 Telnet 消息实例。
   TLOptMsg.fromBytes(List<int> bytes) : super(bytes) {
     assert(bytes.length == 3
         && bytes[0] == TLCmd.iac.code
@@ -85,20 +89,22 @@ class TLOptMsg extends TLMsg {
     opt = TLOpt.get(bytes.last);
   }
 
-  /// 选项协商的命令码。
+  /// 命令码。
   late final TLCmd cmd;
 
-  /// 选项协商的选项码。
+  /// 选项码。
   late final TLOpt opt;
 }
 
 
-/// Telnet Subnegotiation Message.
+/// Telnet 子选项协商消息类。
 class TLSubMsg extends TLMsg {
 
+  /// 通过选项码和参数数据来创建一个 Telnet 消息实例。。
   TLSubMsg(this.opt, this.arg)
       : super([TLCmd.iac.code, TLCmd.sb.code, opt.code, ...arg, TLCmd.iac.code, TLCmd.se.code]);
 
+  /// 通过字节序列来创建一个 Telnet 消息实例。
   TLSubMsg.fromBytes(List<int> bytes) : super(bytes) {
     assert(bytes.length > 4
         && bytes[0] == TLCmd.iac.code
@@ -109,9 +115,9 @@ class TLSubMsg extends TLMsg {
     arg = bytes.sublist(2, bytes.length-2);
   }
 
-  /// 选项协商的选项码。
+  /// 选项码。
   late final TLOpt opt;
 
-  /// 附带的参数数据。
+  /// 参数数据。
   late final List<int> arg;
 }
