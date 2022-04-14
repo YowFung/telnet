@@ -1,11 +1,9 @@
 part of "package:telnet/telnet.dart";
 
-
 /// Telnet 命令代码。
-/// 
+///
 /// 参考资料: [Telnet commands and options](https://www.ibm.com/docs/en/zos/2.3.0?topic=problems-telnet-commands-options)
 class TLCmd {
-
   static final _map = <int, TLCmd>{};
 
   TLCmd._(this.code) {
@@ -97,12 +95,10 @@ class TLCmd {
   static final iac = TLCmd._(255);
 }
 
-
 /// Telnet 选项代码。
 ///
 /// 参考资料: [Telnet Options](https://www.iana.org/assignments/telnet-options/telnet-options.xhtml)
 class TLOpt {
-
   static final _map = <int, TLOpt>{};
 
   TLOpt._(this.code) {

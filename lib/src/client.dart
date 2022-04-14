@@ -1,6 +1,5 @@
 part of "package:telnet/telnet.dart";
 
-
 abstract class ITLConnectionTask {
   /// Telnet 客户端实例。
   ///
@@ -27,10 +26,8 @@ abstract class ITLConnectionTask {
   void cancel();
 }
 
-
 /// Telnet 连接任务类。
 class TLConnectionTask implements ITLConnectionTask {
-
   TLConnectionTask._(Future<void> Function(TLConnectionTask) handler) {
     _watch.start();
     handler(this).catchError((error) {
@@ -77,7 +74,6 @@ class TLConnectionTask implements ITLConnectionTask {
   }
 }
 
-
 abstract class ITelnetClient {
   /// 服务端的主机地址。
   String get remoteAddress;
@@ -116,10 +112,8 @@ abstract class ITelnetClient {
   void writeAll(Iterable<TLMsg> messages);
 }
 
-
 /// Telnet 客户端类。
 class TelnetClient implements ITelnetClient {
-
   /// 启动一个 Telnet 连接。
   ///
   /// 返回一个 [ITLConnectionTask] 实例，可使用该实例来取消连接、获取连接过程中发生的异常、获取连接耗时等。
@@ -140,7 +134,8 @@ class TelnetClient implements ITelnetClient {
     TLErrCallback? onError,
     TLDoneCallback? onDone,
     TLEventCallback? onEvent,
-  }) => _getTask(host, port, timeout, onError, onDone, onEvent,
+  }) =>
+      _getTask(host, port, timeout, onError, onDone, onEvent,
           (task) => RawSocket.startConnect(host, port));
 
   /// 启动一个安全的 Telnet 连接。
@@ -161,18 +156,27 @@ class TelnetClient implements ITelnetClient {
     TLErrCallback? onError,
     TLDoneCallback? onDone,
     TLEventCallback? onEvent,
-  }) => _getTask(host, port, timeout, onError, onDone, onEvent,
+  }) =>
+      _getTask(
+          host,
+          port,
+          timeout,
+          onError,
+          onDone,
+          onEvent,
           (task) => RawSecureSocket.startConnect(host, port,
-          context: securityContext,
-          onBadCertificate: onBadCertificate,
-          supportedProtocols: supportedProtocols));
+              context: securityContext,
+              onBadCertificate: onBadCertificate,
+              supportedProtocols: supportedProtocols));
 
-  static ITLConnectionTask _getTask(String host, int port, Duration timeout,
+  static ITLConnectionTask _getTask(
+      String host,
+      int port,
+      Duration timeout,
       TLErrCallback? onError,
       TLDoneCallback? onDone,
       TLEventCallback? onEvent,
-      Future<ConnectionTask> Function(ITLConnectionTask) f)
-  {
+      Future<ConnectionTask> Function(ITLConnectionTask) f) {
     final task = TLConnectionTask._((task) async {
       task._task = await f(task).timeout(timeout - task.elapsed);
       if (task._task == null) {
@@ -185,16 +189,15 @@ class TelnetClient implements ITelnetClient {
       }
       client._socket!.writeEventsEnabled = false;
       client._subscription = client._socket!.listen(client._onData,
-          onError: client._onError,
-          onDone: client._onDone
-      );
+          onError: client._onError, onDone: client._onDone);
       task._client = client;
     });
     task.onError = (err) => onError?.call(null, err);
     return task;
   }
 
-  TelnetClient._(this.remoteAddress, this.remotePort, this.onError, this.onDone, this.onEvent);
+  TelnetClient._(this.remoteAddress, this.remotePort, this.onError, this.onDone,
+      this.onEvent);
 
   @override
   final String remoteAddress;
@@ -276,35 +279,42 @@ class TelnetClient implements ITelnetClient {
 
   void _handleCharCode(int code) {
     switch (_state) {
-      case _CodeState.normal: {
-        if (code == TLCmd.iac.code) {
-          _outputMsg((data) => TLTextMsg.fromBytes(data));
-          _state = _CodeState.iac;
+      case _CodeState.normal:
+        {
+          if (code == TLCmd.iac.code) {
+            _outputMsg((data) => TLTextMsg.fromBytes(data));
+            _state = _CodeState.iac;
+          }
+          _buffer.add(code);
         }
-        _buffer.add(code);
-      } break;
-      case _CodeState.iac: {
-        _buffer.add(code);
-        if (code == TLCmd.sb.code) {
-          _state = _CodeState.subOpt;
-        } else if (code == TLCmd.se.code) {
-          _outputMsg((data) => TLSubMsg.fromBytes(data));
+        break;
+      case _CodeState.iac:
+        {
+          _buffer.add(code);
+          if (code == TLCmd.sb.code) {
+            _state = _CodeState.subOpt;
+          } else if (code == TLCmd.se.code) {
+            _outputMsg((data) => TLSubMsg.fromBytes(data));
+            _state = _CodeState.normal;
+          } else {
+            _state = _CodeState.opt;
+          }
+        }
+        break;
+      case _CodeState.opt:
+        {
+          _buffer.add(code);
+          _outputMsg((data) => TLOptMsg.fromBytes(data));
           _state = _CodeState.normal;
-        } else {
-          _state = _CodeState.opt;
         }
-      } break;
-      case _CodeState.opt: {
-        _buffer.add(code);
-        _outputMsg((data) => TLOptMsg.fromBytes(data));
-        _state = _CodeState.normal;
-      } break;
-      case _CodeState.subOpt: {
-        _buffer.add(code);
-        if (code == TLCmd.iac.code) {
-          _state = _CodeState.iac;
+        break;
+      case _CodeState.subOpt:
+        {
+          _buffer.add(code);
+          if (code == TLCmd.iac.code) {
+            _state = _CodeState.iac;
+          }
         }
-      }
     }
   }
 

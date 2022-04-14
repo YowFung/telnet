@@ -1,9 +1,7 @@
 part of "package:telnet/telnet.dart";
 
-
 /// Telnet 消息基类。
 abstract class TLMsg {
-
   const TLMsg(this.bytes);
 
   /// 完整的字节序列数据。
@@ -13,8 +11,10 @@ abstract class TLMsg {
   int get hashCode => toString().hashCode;
 
   @override
-  bool operator ==(Object other) => other.runtimeType == runtimeType
-      && (other as TLMsg).bytes.length == bytes.length && other.toString() == toString();
+  bool operator ==(Object other) =>
+      other.runtimeType == runtimeType &&
+      (other as TLMsg).bytes.length == bytes.length &&
+      other.toString() == toString();
 
   @override
   String toString() {
@@ -36,10 +36,8 @@ abstract class TLMsg {
   }
 }
 
-
 /// Telnet 文本消息类。
 class TLTextMsg extends TLMsg {
-
   /// 通过字符串文本来创建一个 Telnet 消息实例。
   TLTextMsg(this.text) : super(text.codeUnits);
 
@@ -51,9 +49,40 @@ class TLTextMsg extends TLMsg {
   /// 消息文本内容。
   late final String text;
 
-  static const _asciiTable = ['NUL', 'SOH', 'STX', 'ETX', 'EOT', 'ENQ', 'ACK', 'BEL', 'BS',
-  'TAB', 'LF', 'VT', 'FF', 'CR', 'SO', 'SI', 'DLE', 'DC1', 'DC2', 'DC3', 'DC4', 'NAK', 'SYN', 'ETB',
-  'CAN', 'EM', 'SUB', 'ESC', 'FS', 'GS', 'RS', 'US'];
+  static const _asciiTable = [
+    'NUL',
+    'SOH',
+    'STX',
+    'ETX',
+    'EOT',
+    'ENQ',
+    'ACK',
+    'BEL',
+    'BS',
+    'TAB',
+    'LF',
+    'VT',
+    'FF',
+    'CR',
+    'SO',
+    'SI',
+    'DLE',
+    'DC1',
+    'DC2',
+    'DC3',
+    'DC4',
+    'NAK',
+    'SYN',
+    'ETB',
+    'CAN',
+    'EM',
+    'SUB',
+    'ESC',
+    'FS',
+    'GS',
+    'RS',
+    'US'
+  ];
 
   @override
   String toString() {
@@ -73,18 +102,18 @@ class TLTextMsg extends TLMsg {
   }
 }
 
-
 /// Telnet 选项消息类。
 class TLOptMsg extends TLMsg {
-
   /// 通过命令码和选项码来创建一个 Telnet 消息实例。
   TLOptMsg(this.cmd, this.opt) : super([TLCmd.iac.code, cmd.code, opt.code]);
 
   /// 通过字节序列来创建一个 Telnet 消息实例。
   TLOptMsg.fromBytes(List<int> bytes) : super(bytes) {
-    assert(bytes.length == 3
-        && bytes[0] == TLCmd.iac.code
-        && bytes[1] != TLCmd.iac.code, "Invalid telnet option event.");
+    assert(
+        bytes.length == 3 &&
+            bytes[0] == TLCmd.iac.code &&
+            bytes[1] != TLCmd.iac.code,
+        "Invalid telnet option event.");
     cmd = TLCmd.get(bytes[1]);
     opt = TLOpt.get(bytes.last);
   }
@@ -96,23 +125,30 @@ class TLOptMsg extends TLMsg {
   late final TLOpt opt;
 }
 
-
 /// Telnet 子选项协商消息类。
 class TLSubMsg extends TLMsg {
-
   /// 通过选项码和参数数据来创建一个 Telnet 消息实例。。
   TLSubMsg(this.opt, this.arg)
-      : super([TLCmd.iac.code, TLCmd.sb.code, opt.code, ...arg, TLCmd.iac.code, TLCmd.se.code]);
+      : super([
+          TLCmd.iac.code,
+          TLCmd.sb.code,
+          opt.code,
+          ...arg,
+          TLCmd.iac.code,
+          TLCmd.se.code
+        ]);
 
   /// 通过字节序列来创建一个 Telnet 消息实例。
   TLSubMsg.fromBytes(List<int> bytes) : super(bytes) {
-    assert(bytes.length > 4
-        && bytes[0] == TLCmd.iac.code
-        && bytes[1] == TLCmd.sb.code
-        && bytes[bytes.length-2] == TLCmd.iac.code
-        && bytes.last == TLCmd.se.code, "Invalid telnet subnegotiation option event.");
+    assert(
+        bytes.length > 4 &&
+            bytes[0] == TLCmd.iac.code &&
+            bytes[1] == TLCmd.sb.code &&
+            bytes[bytes.length - 2] == TLCmd.iac.code &&
+            bytes.last == TLCmd.se.code,
+        "Invalid telnet subnegotiation option event.");
     opt = TLOpt.get(bytes[2]);
-    arg = bytes.sublist(2, bytes.length-2);
+    arg = bytes.sublist(2, bytes.length - 2);
   }
 
   /// 选项码。

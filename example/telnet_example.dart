@@ -1,29 +1,27 @@
 import 'package:telnet/telnet.dart';
 
-
 const host = "192.168.4.163";
 const port = 23;
 const username = "admin";
 const password = "";
 var hasLogin = false;
 
-
 void main() async {
   // Create a Telnet connection task.
   final task = TelnetClient.startConnect(
-    host: host, 
-    port: port, 
+    host: host,
+    port: port,
     onError: onError,
     onDone: onDone,
     onEvent: onEvent,
   );
-  
+
   // Cancel the connection task.
   // task.cancel();
-  
+
   // Wait the connection task finished.
   await task.waitDone();
-  
+
   // Get the `TelnetClient` instance. It will be `null` if connect failed.
   final client = task.client;
   if (client == null) {
@@ -31,12 +29,11 @@ void main() async {
   } else {
     print("Successfully connect to $host:$port");
   }
-  
+
   await Future.delayed(const Duration(seconds: 15));
   // Close the Telnet connection.
   await client?.terminate();
 }
-
 
 void onError(TelnetClient? client, dynamic error) {
   print("[ERROR] $error");
@@ -52,8 +49,8 @@ void onEvent(TelnetClient? client, TLMsgEvent event) {
   } else if (event.type == TLMsgEventType.read) {
     print("[READ] ${event.msg}");
     if (event.msg is TLOptMsg) {
-      final cmd = (event.msg as TLOptMsg).cmd;        // Telnet Negotiation Command.
-      final opt = (event.msg as TLOptMsg).opt;        // Telnet Negotiation Option.
+      final cmd = (event.msg as TLOptMsg).cmd; // Telnet Negotiation Command.
+      final opt = (event.msg as TLOptMsg).opt; // Telnet Negotiation Option.
       if (cmd == TLCmd.doIt) {
         if (opt == TLOpt.windowSize) {
           // Send `IAC WILL TERMINAL_WINDOW_SIZE`.
