@@ -1,8 +1,35 @@
 part of "package:telnet/telnet.dart";
 
 
+abstract class ITLConnectionTask {
+  /// Telnet 客户端实例。
+  ///
+  /// 连接完成前，或者连接失败时，此属性均为 `null`，可通过判空来判断是否连接成功。
+  ITelnetClient? get client;
+
+  /// 连接结束时的回调事件。
+  ///
+  /// 其中 [client] 参数为 Telnet 客户端实例，若连接失败，则 [client] 为 `null`。
+  void Function(ITelnetClient? client)? onDone;
+
+  /// 连接过程中有异常发生时的回调。
+  void Function(dynamic)? onError;
+
+  /// 连接耗时。
+  Duration get elapsed;
+
+  /// 等待连接结束。
+  Future<void> waitDone();
+
+  /// 取消连接。
+  ///
+  /// 该方法只在连接进行中时有效，一旦连接结束（无论是连接成功还是失败）后再调用该方法则无任何效果。
+  void cancel();
+}
+
+
 /// Telnet 连接任务类。
-class TLConnectionTask {
+class TLConnectionTask implements ITLConnectionTask {
 
   TLConnectionTask._(Future<void> Function(TLConnectionTask) handler) {
     _watch.start();
@@ -20,35 +47,29 @@ class TLConnectionTask {
   }
 
   ConnectionTask? _task;
-  TelnetClient? _client;
+  ITelnetClient? _client;
   final _watch = Stopwatch();
 
-  /// Telnet 客户端实例。
-  ///
-  /// 连接完成前，或者连接失败时，此属性均为 `null`，可通过判空来判断是否连接成功。
-  TelnetClient? get client => _client;
+  @override
+  ITelnetClient? get client => _client;
 
-  /// 连接结束时的回调事件。
-  ///
-  /// 其中 [client] 参数为 Telnet 客户端实例，若连接失败，则 [client] 为 `null`。
-  void Function(TelnetClient? client)? onDone;
+  @override
+  void Function(ITelnetClient? client)? onDone;
 
-  /// 连接过程中有异常发生时的回调。
+  @override
   void Function(dynamic)? onError;
 
-  /// 连接耗时。
+  @override
   Duration get elapsed => _watch.elapsed;
 
-  /// 等待连接结束。
+  @override
   Future<void> waitDone() async {
     while (_watch.isRunning) {
       await Future.delayed(const Duration(milliseconds: 5));
     }
   }
 
-  /// 取消连接。
-  ///
-  /// 该方法只在连接进行中时有效，一旦连接结束（无论是连接成功还是失败）后再调用该方法则无任何效果。
+  @override
   void cancel() {
     _watch.stop();
     _task?.cancel();
@@ -57,23 +78,62 @@ class TLConnectionTask {
 }
 
 
+abstract class ITelnetClient {
+  /// 服务端的主机地址。
+  String get remoteAddress;
+
+  /// 服务端的端口号。
+  int get remotePort;
+
+  /// 交互过程中有异常发生时的回调。
+  TLErrCallback? get onError;
+
+  /// 连接被关闭时（断开连接或因发生异常而中止）的回调。
+  TLDoneCallback? get onDone;
+
+  /// 当有 Telnet 消息事件发生时（发送一个 Telnet 消息或接收到一个 Telnet 消息时）的回调。
+  /// 可在这个回调中侦听和处理各种消息事件。
+  TLEventCallback? get onEvent;
+
+  /// 客户端的主机地址。
+  String? get localAddress;
+
+  /// 客户端的端口号。
+  int? get localPort;
+
+  /// 是否已建立连接。
+  bool get isConnected;
+
+  /// 中断连接。
+  Future<void> terminate();
+
+  /// 向服务端发送一个 Telnet 消息。
+  ///
+  /// 该消息可以是选项协商（[TLOptMsg]）、子选项协商（[TLSubMsg]），也可以是文本消息（[TLTextMsg]）。
+  void write(TLMsg msg);
+
+  /// 一次性向服务端发送多个 Telnet 消息。
+  void writeAll(Iterable<TLMsg> messages);
+}
+
+
 /// Telnet 客户端类。
-class TelnetClient {
+class TelnetClient implements ITelnetClient {
 
   /// 启动一个 Telnet 连接。
   ///
-  /// 返回一个 [TLConnectionTask] 实例，可使用该实例来取消连接、获取连接过程中发生的异常、获取连接耗时等。
+  /// 返回一个 [ITLConnectionTask] 实例，可使用该实例来取消连接、获取连接过程中发生的异常、获取连接耗时等。
   ///
   /// [timeout] 是指连接超时时间。
   ///
   /// [onError] 是在连接成功之后的交互过程中发生异常时的回调（例如异常断开连接），
-  /// 正在连接的过程中所产生的异常请在 [TLConnectionTask.onError] 回调中捕获。
+  /// 正在连接的过程中所产生的异常请在 [ITLConnectionTask.onError] 回调中捕获。
   ///
   /// [onDone] 是连接被关闭（手动断开或由于网络异常等原因自动断开）时的回调。
   ///
   /// [onEvent] 是在有传输消息事件发生时（发送一个 Telnet 消息或接收到一个 Telnet 消息时）的回调，
   /// 可在这个回调中侦听和处理各种消息事件。
-  static TLConnectionTask startConnect({
+  static ITLConnectionTask startConnect({
     required String host,
     int port = 23,
     Duration timeout = const Duration(seconds: 10),
@@ -91,7 +151,7 @@ class TelnetClient {
   /// [securityContext]、[onBadCertificate] 和 [supportedProtocols] 参数的含义
   /// 请参阅 [RawSecureSocket.startConnect] 方法的文档注释。
   /// 其他参数含义请参阅 [TelnetClient.startConnect] 方法的文档注释。
-  static TLConnectionTask startSecureConnect({
+  static ITLConnectionTask startSecureConnect({
     required String host,
     int port = 23,
     Duration timeout = const Duration(seconds: 10),
@@ -107,11 +167,11 @@ class TelnetClient {
           onBadCertificate: onBadCertificate,
           supportedProtocols: supportedProtocols));
 
-  static TLConnectionTask _getTask(String host, int port, Duration timeout,
+  static ITLConnectionTask _getTask(String host, int port, Duration timeout,
       TLErrCallback? onError,
       TLDoneCallback? onDone,
       TLEventCallback? onEvent,
-      Future<ConnectionTask> Function(TLConnectionTask) f)
+      Future<ConnectionTask> Function(ITLConnectionTask) f)
   {
     final task = TLConnectionTask._((task) async {
       task._task = await f(task).timeout(timeout - task.elapsed);
@@ -136,20 +196,19 @@ class TelnetClient {
 
   TelnetClient._(this.remoteAddress, this.remotePort, this.onError, this.onDone, this.onEvent);
 
-  /// 服务端的主机地址。
+  @override
   final String remoteAddress;
 
-  /// 服务端的端口号。
+  @override
   late final int remotePort;
 
-  /// 交互过程中有异常发生时的回调。
+  @override
   final TLErrCallback? onError;
 
-  /// 连接被关闭时（断开连接或因发生异常而中止）的回调。
+  @override
   final TLDoneCallback? onDone;
 
-  /// 当有 Telnet 消息事件发生时（发送一个 Telnet 消息或接收到一个 Telnet 消息时）的回调。
-  /// 可在这个回调中侦听和处理各种消息事件。
+  @override
   final TLEventCallback? onEvent;
 
   RawSocket? _socket;
@@ -158,24 +217,22 @@ class TelnetClient {
   _CodeState _state = _CodeState.normal;
   int _tick = 0;
 
-  /// 客户端的主机地址。
+  @override
   String? get localAddress => _socket?.address.address;
 
-  /// 客户端的端口号。
+  @override
   int? get localPort => _socket?.port;
 
-  /// 是否已建立连接。
+  @override
   bool get isConnected => _socket != null;
 
-  /// 中断连接。
+  @override
   Future<void> terminate() async {
     await _socket?.close();
     _socket = null;
   }
 
-  /// 向服务端发送一个 Telnet 消息。
-  ///
-  /// 该消息可以是选项协商（[TLOptMsg]）、子选项协商（[TLSubMsg]），也可以是文本消息（[TLTextMsg]）。
+  @override
   void write(TLMsg msg) {
     final res = _socket?.write(msg.bytes);
     if (res != null && res > 0) {
@@ -183,7 +240,7 @@ class TelnetClient {
     }
   }
 
-  /// 一次性向服务端发送多个 Telnet 消息。
+  @override
   void writeAll(Iterable<TLMsg> messages) {
     final bytes = <int>[];
     for (final msg in messages) {
