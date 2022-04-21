@@ -1,3 +1,7 @@
+## 1.0.3
+
+- Safely terminate the client connection.
+
 ## 1.0.2
 
 - Export Interfaces.
