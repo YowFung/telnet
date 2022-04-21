@@ -5,10 +5,10 @@ void main() {
   // 可以通过 docker 创建一个 telnet-server 来进行测试：
   // `docker run -it --name telnet-server -p 20023:23 flemingcsi/telnet-server`
   // 进入容器后执行 `passwd` 修改登录密码。
-  const host = "0.0.0.0";
-  const port = 20023;
+  const host = "192.168.1.145";
+  const port = 60023;
   const username = "root";
-  const password = "4376";
+  const password = "proitav";
 
   test("Connection and Login", () async {
     var loginSuccessful = false;

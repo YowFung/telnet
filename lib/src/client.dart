@@ -231,6 +231,22 @@ class TelnetClient implements ITelnetClient {
 
   @override
   Future<void> terminate() async {
+    write(TLOptMsg(TLCmd.doIt, TLOpt.logout));
+
+    final watch = Stopwatch()..start();
+    while (watch.elapsedMilliseconds < 2000) {
+      if (_socket == null) {
+        watch.stop();
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    watch.stop();
+    await _terminateForce();
+  }
+
+  Future<void> _terminateForce() async {
     await _socket?.close();
     _socket = null;
   }
@@ -324,6 +340,14 @@ class TelnetClient implements ITelnetClient {
     if (data.isNotEmpty) {
       final msg = msgBuilder(data);
       onEvent?.call(this, TLMsgEvent._(TLMsgEventType.read, msg));
+
+      if (msg is TLOptMsg && msg.opt == TLOpt.logout) {
+        if (msg.cmd == TLCmd.doIt) {
+          terminate();
+        } else {
+          _terminateForce();
+        }
+      }
     }
   }
 
