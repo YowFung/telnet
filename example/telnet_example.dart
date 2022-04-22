@@ -1,19 +1,19 @@
 import 'package:telnet/telnet.dart';
 
-const host = "192.168.4.163";
+const host = "127.0.0.1";
 const port = 23;
-const username = "admin";
-const password = "";
-var hasLogin = false;
+const username = "root";
+const password = "admin";
+const echoEnabled = true;
 
 void main() async {
   // Create a Telnet connection task.
   final task = TelnetClient.startConnect(
     host: host,
     port: port,
-    onError: onError,
-    onDone: onDone,
-    onEvent: onEvent,
+    onEvent: _onEvent,
+    onError: _onError,
+    onDone: _onDone,
   );
 
   // Cancel the connection task.
@@ -31,52 +31,95 @@ void main() async {
   }
 
   await Future.delayed(const Duration(seconds: 15));
+
   // Close the Telnet connection.
   await client?.terminate();
 }
 
-void onError(TelnetClient? client, dynamic error) {
-  print("[ERROR] $error");
-}
+var _hasLogin = false;
+final _willReplyMap = <TLOpt, List<TLMsg>>{
+  TLOpt.echo: [echoEnabled
+      ? TLOptMsg(TLCmd.doIt, TLOpt.echo)                      // [IAC DO ECHO]
+      : TLOptMsg(TLCmd.doNot, TLOpt.echo)],                   // [IAC DON'T ECHO]
+  TLOpt.suppress: [TLOptMsg(TLCmd.doIt, TLOpt.suppress)],     // [IAC DO SUPPRESS_GO_AHEAD]
+  TLOpt.logout: [],
+};
+final _doReplyMap = <TLOpt, List<TLMsg>>{
+  TLOpt.echo: [echoEnabled
+      ? TLOptMsg(TLCmd.will, TLOpt.echo)                      // [IAC WILL ECHO]
+      : TLOptMsg(TLCmd.wont, TLOpt.echo)],                    // [IAC WONT ECHO]
+  TLOpt.logout: [],
+  TLOpt.tmlType: [
+    TLOptMsg(TLCmd.will, TLOpt.tmlType),                      // [IAC WILL TELNET_TYPE]
+    TLSubMsg(TLOpt.tmlType, [0x00, 0x41, 0x4E, 0x53, 0x49]),  // [IAC SB TELNET_TYPE IS ANSI IAC SE]
+  ],
+  TLOpt.windowSize: [
+    TLOptMsg(TLCmd.will, TLOpt.windowSize),                   // [IAC WILL WINDOW_SIZE]
+    TLSubMsg(TLOpt.windowSize, [0x00, 0x5A, 0x00, 0x18]),     // [IAC SB WINDOW_SIZE 90 24 IAC SE]
+  ],
+};
 
-void onDone(TelnetClient? client) {
-  print("[DONE]");
-}
-
-void onEvent(TelnetClient? client, TLMsgEvent event) {
+void _onEvent(TelnetClient? client, TLMsgEvent event) {
   if (event.type == TLMsgEventType.write) {
     print("[WRITE] ${event.msg}");
+
   } else if (event.type == TLMsgEventType.read) {
     print("[READ] ${event.msg}");
+
     if (event.msg is TLOptMsg) {
       final cmd = (event.msg as TLOptMsg).cmd; // Telnet Negotiation Command.
       final opt = (event.msg as TLOptMsg).opt; // Telnet Negotiation Option.
-      if (cmd == TLCmd.doIt) {
-        if (opt == TLOpt.windowSize) {
-          // Send `IAC WILL TERMINAL_WINDOW_SIZE`.
-          client!.write(TLOptMsg(TLCmd.will, opt));
-          // Send `IAC SB TERMINAL_WINDOW_SIZE 100 24 IAC SE`.
-          client.write(TLSubMsg(opt, [0x00, 0x64, 0x00, 0x18]));
-        } else {
-          // `IAC WONT xxx` to reply to `IAC DO xxx`.
-          client!.write(TLOptMsg(TLCmd.wont, opt));
-        }
+
+      if (cmd == TLCmd.wont) {
+        // Write [IAC DO opt].
+        client?.write(TLOptMsg(TLCmd.doNot, opt));
+      } else if (cmd == TLCmd.doNot) {
+        // Write [IAC WON'T opt].
+        client?.write(TLOptMsg(TLCmd.wont, opt));
       } else if (cmd == TLCmd.will) {
-        // `IAC DONT xxx` to reply to `IAC WILL xxx`.
-        client!.write(TLOptMsg(TLCmd.doNot, opt));
+        if (_willReplyMap.containsKey(opt)) {
+          // Reply the option.
+          for (var msg in _willReplyMap[opt]!) {
+            client?.write(msg);
+          }
+        } else {
+          // Write [IAC DON'T opt].
+          client?.write(TLOptMsg(TLCmd.doNot, opt));
+        }
+      } else if (cmd == TLCmd.doIt) {
+        // Reply the option.
+        if (_doReplyMap.containsKey(opt)) {
+          for (var msg in _doReplyMap[opt]!) {
+            client?.write(msg);
+          }
+        } else {
+          // Write [IAC WON'T opt].
+          client?.write(TLOptMsg(TLCmd.wont, opt));
+        }
       }
-    } else if (!hasLogin && event.msg is TLTextMsg) {
+
+    } else if (!_hasLogin && event.msg is TLTextMsg) {
+
       final text = (event.msg as TLTextMsg).text.toLowerCase();
       if (text.contains("welcome")) {
-        hasLogin = true;
+        _hasLogin = true;
         print("[INFO] Login OK!");
       } else if (text.contains("login:") || text.contains("username:")) {
-        // Write username.
+        // Write [username].
         client!.write(TLTextMsg("$username\r\n"));
       } else if (text.contains("password:")) {
-        // Write password.
+        // Write [password].
         client!.write(TLTextMsg("$password\r\n"));
       }
+
     }
   }
+}
+
+void _onError(TelnetClient? client, dynamic error) {
+  print("[ERROR] $error");
+}
+
+void _onDone(TelnetClient? client) {
+  print("[DONE]");
 }

@@ -102,3 +102,4 @@ final task = TelnetClient.startConnect(
 );
 ```
 
+完整使用方法请参考 `Example` 代码，更多详细说明请参考 API 文档。
