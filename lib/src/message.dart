@@ -39,7 +39,7 @@ abstract class TLMsg {
 /// Telnet 文本消息类。
 class TLTextMsg extends TLMsg {
   /// 通过字符串文本来创建一个 Telnet 消息实例。
-  TLTextMsg(this.text) : super(text.codeUnits);
+  TLTextMsg(this.text) : super(utf8.encode(text));
 
   /// 通过字节序列来创建一个 Telnet 消息实例。
   TLTextMsg.fromBytes(List<int> bytes) : super(bytes) {

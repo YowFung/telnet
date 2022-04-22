@@ -3,12 +3,12 @@ import 'package:test/test.dart';
 
 void main() {
   // 可以通过 docker 创建一个 telnet-server 来进行测试：
-  // `docker run -it --name telnet-server -p 20023:23 flemingcsi/telnet-server`
+  // `docker run -it --name telnet-server -p 60023:23 flemingcsi/telnet-server`
   // 进入容器后执行 `passwd` 修改登录密码。
-  const host = "192.168.1.145";
+  const host = "127.0.0.1";
   const port = 60023;
   const username = "root";
-  const password = "proitav";
+  const password = "admin";
 
   test("Connection and Login", () async {
     var loginSuccessful = false;

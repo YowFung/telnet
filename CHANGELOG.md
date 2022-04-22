@@ -1,3 +1,7 @@
+## 1.0.6
+
+- Fixed encoding issue.
+
 ## 1.0.5
 
 - Update Example Code.
