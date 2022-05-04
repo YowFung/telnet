@@ -30,7 +30,7 @@ void main() async {
     print("Successfully connect to $host:$port");
   }
 
-  await Future.delayed(const Duration(seconds: 15));
+  await Future.delayed(const Duration(seconds: 10));
 
   // Close the Telnet connection.
   await client?.terminate();
@@ -50,8 +50,8 @@ final _doReplyMap = <TLOpt, List<TLMsg>>{
       : TLOptMsg(TLCmd.wont, TLOpt.echo)],                    // [IAC WONT ECHO]
   TLOpt.logout: [],
   TLOpt.tmlType: [
-    TLOptMsg(TLCmd.will, TLOpt.tmlType),                      // [IAC WILL TELNET_TYPE]
-    TLSubMsg(TLOpt.tmlType, [0x00, 0x41, 0x4E, 0x53, 0x49]),  // [IAC SB TELNET_TYPE IS ANSI IAC SE]
+    TLOptMsg(TLCmd.will, TLOpt.tmlType),                      // [IAC WILL TERMINAL_TYPE]
+    TLSubMsg(TLOpt.tmlType, [0x00, 0x41, 0x4E, 0x53, 0x49]),  // [IAC SB TERMINAL_TYPE IS ANSI IAC SE]
   ],
   TLOpt.windowSize: [
     TLOptMsg(TLCmd.will, TLOpt.windowSize),                   // [IAC WILL WINDOW_SIZE]

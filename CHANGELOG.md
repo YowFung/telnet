@@ -1,3 +1,7 @@
+## 1.0.7
+
+- Fixed example comment.
+
 ## 1.0.6
 
 - Fixed encoding issue.

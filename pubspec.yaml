@@ -1,8 +1,8 @@
 name: telnet
 description: Telnet client implemented in dart language. Supports text transmission and negotiate options.
-version: 1.0.6
+version: 1.0.7
 homepage: https://github.com/YowFung/telnet
-verified_publishers: yowfung
+verified_publishers: pub.yowfung.cn
 
 environment:
   sdk: '>=2.14.0 <3.0.0'
